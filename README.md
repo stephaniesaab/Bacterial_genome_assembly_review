@@ -1,5 +1,5 @@
 # Bacterial_genome_assembly_review
-Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genome for *Salmonella enterica*
+Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genome for *Salmonella enterica*, aligning it to a reference genome, and visualizing variants.
 ## Table of Contents
 * [1.Introduction](#1-introduction)
 * [1.1 Biological Background](#11-biological-background)
