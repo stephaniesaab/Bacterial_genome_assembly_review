@@ -22,7 +22,7 @@ Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genom
 
 ### 1.2 Challenges of genome assembly 
 
-Genome assembly of bacteria is complicated by several challenges. One difficulty is repeat sequences as these create ambiguities when organizing reads based on overlapping segments. If the reads are shorter than the repeats, then there are an exponential number of possible genomes, and the problem is not computationally tractable (Simpson & Pop 2015). LRS can address this problem to make genome assembly feasible with overlapping-based algorithms (Simpson & Pop, 2015). Also, as more sequence data become available, there is a greater need for assemblers to be able to efficiently handle big data and scale with the volume of data produced. With LRS data, there is a growing need for assemblers to tolerate sequencing errors as well (Simpson & Pop, 2015). 
+Genome assembly of bacteria is complicated by several challenges. One difficulty is repeat sequences as these create ambiguities when organizing reads based on overlapping segments. If the reads are shorter than the repeats, then there are an exponential number of possible genomes, and the problem is not computationally tractable (Simpson & Pop, 2015). LRS can address this problem to make genome assembly feasible with overlapping-based algorithms (Simpson & Pop, 2015). Also, as more sequence data become available, there is a greater need for assemblers to be able to efficiently handle big data and scale with the volume of data produced. With LRS data, there is a growing need for assemblers to tolerate sequencing errors as well (Simpson & Pop, 2015). 
 
 ### 1.3 Comparison 
 
