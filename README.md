@@ -72,7 +72,7 @@ Li, H. (2018). Minimap2: Pairwise alignment for nucleotide sequences. Bioinforma
 
 McClelland, M., Sanderson, K. E., Spieth, J., Clifton, S. W., Latreille, P., Courtney, L., Porwollik, S., Ali, J., Dante, M., Du, F., Hou, S., Layman, D., Leonard, S., Nguyen, C., Scott, K., Holmes, A., Grewal, N., Mulvaney, E., Ryan, E., … Wilson, R. K. (2001). Complete genome sequence of *Salmonella enterica* serovar Typhimurium LT2. Nature, 413(6858), 852–856. https://doi.org/10.1038/35101614 
 
-Medaka: Sequence correction provided by ONT Research. https://github.com/nanoporetech/medaka.
+Oxford Nanopore Technologies Ltd. Medaka: Sequence correction provided by ONT Research. https://github.com/nanoporetech/medaka.
 
 Robinson, J. T., Thorvaldsdóttir, H., Winckler, W., Guttman, M., Lander, E. S., Getz, G., & Mesirov, J. P. (2011). Integrative genomics viewer. Nature Biotechnology, 29(1), 24–26. https://doi.org/10.1038/nbt.1754 
 
