@@ -8,7 +8,7 @@ Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genom
 * [Proposed methods](#proposed-methods)
 * [QC](#qc)
 * [Read Processing](#read-processing)
-* [*De novo genome assembly](#de-novo-genome-assembly)
+* [*De novo* genome assembly](#de-novo-genome-assembly)
 * [Assembly polishing](#assembly-polishing)
 * [Reference alignment & Visualization](#reference-alignment-&-visualization)
 
