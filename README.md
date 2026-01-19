@@ -1,16 +1,17 @@
 # Bacterial_genome_assembly_review
 Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genome for *Salmonella enterica*
 ## Table of Contents
-* [Introduction](##introduction)
-* [Biological Background](#biological-background)
-* [Challenges of genome assembly](#challenges-of-genome-assembly)
-* [Comparison](#comparison)
-* [Proposed methods](#proposed-methods)
-* [QC](#qc)
-* [Read Processing](#read-processing)
-* [*De novo* genome assembly](#de-novo-genome-assembly)
-* [Assembly polishing](#assembly-polishing)
-* [Reference alignment & Visualization](#reference-alignment-&-visualization)
+* [1.Introduction](#1-introduction)
+* [1.1 Biological Background](#11-biological-background)
+* [1.2 Challenges of genome assembly](#12-challenges-of-genome-assembly)
+* [1.3 Comparison](#13-comparison)
+* [2. Proposed methods](#2-proposed-methods)
+* [2.1 QC](#21-qc)
+* [2.2 Read Processing](#22-read-processing)
+* [2.3 *De novo* genome assembly](#23-de-novo-genome-assembly)
+* [2.4 Assembly polishing](#24-assembly-polishing)
+* [2.5 Reference alignment & Visualization](#25-reference-alignment--visualization)
+* [3. References](#3-references)
 
 
 ## 1. Introduction 
@@ -47,7 +48,7 @@ Data processing will be done in NanoFilt if indicated by the QC results. Filteri
 
 The draft assembly will be polished using Medaka (version 2.2.0) to improve base-level accuracy by correcting sequencing errors associated with LRS. Specific parameters will be set for the input base calls, the assembly Fasta, the output directory, the bacteria flag, and the threads. A bacterial-specific Medaka consensus model compatible with R10 ONT chemistry will be used to optimize accuracy for the *S. enterica* genome (Oxford Nanopore Technologies Ltd., 2018). 
 
-### 2.3 Reference alignment & Visualization 
+### 2.5 Reference alignment & Visualization 
 
 A reference genome for *S. enterica* will be downloaded from NCBI. The polished assembly will be aligned to the reference genome using minimap2 (version 2.30). Variant calling will be performed using Bcftools (version 1.23) to identify differences between the assembled genome and the reference. For minimap2, default parameters will be used for alignment of entire genomes, and the asm5 flag as they are high-quality alignments, this flag aligns assemblies with less than 5% divergence (Li, 2018). Variant calling will be performed with Bcftools to identify genetic variants to the reference genome. The parameters will set the ploidy as haploid (1) as it is a bacterial genome. Variant files will be compressed, sorted, and indexed for visualization. The assembly structure, alignments, and identified variants will be visualized in IGV to assess assembly the assembly quality and validate variant calls. The shade-by-base quality parameter will be set to distinguish true variants from potential sequencing errors (Robinson et al., 2011). 
 
