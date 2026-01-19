@@ -1,108 +1,78 @@
 # Bacterial_genome_assembly_review
-Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genome for Salmonella enterica
-
-# Assignment 1
-
-## Introduction
-
-## Proposed Methods
-
-## References
-
-
-# DRAFT and NOTES
-Challenges with sequence alignment from: Simpson & Pop 2015
-- Genome assembly is the computational process of assembly together fragments of a genome based on sequenced DNA reads, in order to make one contiguous sequence.
-- Challenge is that it's very complex: shortest common superstring problem --> computationally not viable and may have exponential number of solutions
-- Challenge with complex and vertebrate genomes: many repeats that are almost identical, strays from parsimony (principle that the simplest explanation with the fewest evolutionary changes is most likely correct to explain observed data)
-- 
-
-Proposed method 
-QC with FastQC --> Look at N50, CG content, 
-Long read assembly with FLYE
-Alignment with Minimap2
-
-More Notes from readings: - What is genome assembly?
-    
-    - “[Genome assembly](https://www.google.com/search?q=Genome+assembly&oq=genome+assembly&gs_lcrp=EgZjaHJvbWUyCQgAEEUYORiABDIHCAEQABiABDIHCAIQABiABDIHCAMQABiABDIHCAQQABiABDIGCAUQRRg8MgYIBhBFGDwyBggHEEUYPNIBCDM5MjJqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8&ved=2ahUKEwjjmc28546SAxVVm4kEHV0dJvIQgK4QegYIAQgAEAM) is **the computational process of piecing together millions of short, fragmented DNA sequences (reads) from a genome into a complete, contiguous sequence”**
-        
-
-- `Why is genome assembly hard?` 
-    
-    - Reconstructing an entire genome means gluing together small fragments, in a particular order
-        
-- `Why are repeats problematic?` 
-    
-    - Repeats make it difficult to align sequences
-        
-    - Need the reads to be longer than the repeats to solve the assembly, if the reads are shorter than the reads than there are exponential number of genomes
-        
-    - Greedy strategy is based on locally optimal joining, so it can’t handle repeated genomic regions (doesn’t consider the whole genome order at once). May collapse repeats
-        
-
-- `Why long reads help (and hurt)?` 
-    
-
-- `What metrics matter (N50, accuracy, contiguity)?` 
-    
-
-Challenge of assembly: Ukkonen and others studied the computational complexity of the assembly problem, formalized as an instance of the shortest common superstring problem (61), the problem of finding the shortest string that encompasses all the reads as substrings. This Occam’s razor formulation assumes that the genome being reconstructed is the most parsimonious explanation of the set of reads. Their work showed that genome sequence assembly is computationally intractablefinding the correct solution may require exploring an exponential number of possible solutions” ([Simpson and Pop, 2015, p. 155](zotero://select/library/items/Y3IVKHPE))
-
-“complex (e.g., vertebrate) genomes: repeats. Most genomes contain DNA segments that are repeated in nearly identical form, thus straying from parsimony” ([Simpson and Pop, 2015, p. 155](zotero://select/library/items/Y3IVKHPE)) ([pdf](zotero://open-pdf/library/items/QKT9JUUS?page=3&annotation=NUDJPGPT))
-
-Parsimony in bio: “In biology, parsimony is **the principle that the simplest explanation requiring the fewest evolutionary changes (like mutations or trait developments) to explain observed data is the most likely to be correct**,”
-
-“An explanation for this all-too-familiar gap between theory and practice is that theoretical intractability results are based on worst-case scenarios, which rarely occur in practice.” ([Simpson and Pop, 2015, p. 155](zotero://select/library/items/Y3IVKHPE)) ([pdf](zotero://open-pdf/library/items/QKT9JUUS?page=3&annotation=T6QTNCGH)) \--> Depends on ratio between size of sequence reads and size of repeats (Need reads to be longer than repeats to make a genome)
-
-Outline below: 
-# Bacterial_genome_assembly_review
-Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genome for Salmonella enterica
-
-# Assignment 1
-# Table of contents
-
-## 1. Introduction
-### 1.1 Biological Background
-Salmonella enterica is a Gram-negative bacterium that can cause food-borne illness in humans (Haendiges et al. 2019). They cause a high number of infections worldwide, with an estimated 1.2 million illnesses (Haendiges et al. 2019). Domestic animals can act as reservoirs for the food-borne spread of these pathogens. These put major strains on the population and economy as it was estimated that costs of food-borne diseases in the US range from 4.8 to 23 billion dollars, with salmonella being a major contributor. It has a circular genome of about 4.8 Mbp (McClelland, 2001). 
-Genome assembly is the computational process of piecing together millions of short, fragmented DNA sequences (reads) from a genome into a complete, contiguous sequence (Simpson & Pop, 2015). It is a foundational tool for biological research and understanding the evolution of species, their physiological processes, and gives insights into the genetic components of diseases. An (almost) complete genome assembly can give a map of an organism's genetic build, which can serve as a foundation for detecting variants in nucleotides, genome structure, which are key for progression of biotechnology, evolutionary biology, precision medicine, and more (CD Genomics, n.d.). Long-read sequencing (LRS) by Oxford Nanopore Technologies (ONT) provides longer contigs of sequence reads of tens of kilobases or longer, but is more error prone (Boostrom et al., 2022). Here, we used LRS by ONT using R10 chemistry (expected Q20+, N50: 5-15 kb) and propose a methodology to computationally assembly the S. enterica genome.
+Assignment 1 for Genomic Methods of Bioinformatics, assembling a bacterial genome for *Salmonella enterica*
+## Table of Contents
+* [Introduction](##introduction)
+* [Biological Background](#biological-background)
+* [Challenges of genome assembly](#challenges-of-genome-assembly)
+* [Comparison](#comparison)
+* [Proposed methods](#proposed-methods)
+* [QC](#qc)
+* [Read Processing](#read-processing)
+* [*De novo genome assembly](#de-novo-genome-assembly)
+* [Assembly polishing](#assembly-polishing)
+* [Reference alignment & Visualization](#reference-alignment-&-visualization)
 
 
-- Salmonella enterica is gram negative bacteria
-  - Genome size about 4.8 Mbp
-  - Pathogenic, causes human gastroenteritis
-     Important in public health, found in foods and domestic animals
-- Why genome assembly is useful?
-  -  Can detect variants, SNPs, can detect structural diff, genomic distances, assess quality of sequencing
-- LRS used to sequence genome (long read sequencing) Oxford Nanopore, R10 chemistry, expected Q20+ (N50: 5-15kb). Oxford nanopore enables near-complete assemblies
-### 1.2 Challenges of genome assembly
-Genome assembly involves reconstructing an entire genome means gluing together small fragments, in a particular order. There are many challenges with genome assembly. One challenge is repeat sequences as these make it difficult to align sequences based on overlapping segments. For algorithms to align repeats, the reads need to be longer than the repeats to solve the assembly, if the reads are shorter than the reads than there are exponential number of genomes possible and the problem is not computationally tractable (Simpson & Pop 2015). Most of the developments in assembly algorithms addressed challenges with short reads, but long reads can address these problems, especially for small genomes like bacterial, and make complex algorithms unnecessary. Analysis of genomic variants is better with longer reads, long sequence reads make assembling a genome sequence easier. Challenge High-error reads associated with third-generation sequencing technologies (longer reads) --> longer reads but more errors. Another challenge with assembly is metagenomics and that there may be mixing of genomes in a sample such as microbiome data, or a mix of tumor cells. Also, as more sequence data become available, especially for larger complex genomes become available, such as vertebrates, there is a greater need for assemblers to be able to efficiently handle Big Data and scale with the amount of sequence reads produced. 
+## 1. Introduction 
 
-### 1.3 Comparison (justify approach)
-When choosing a genome assembly tool, we must consider several factors including the nature of the sequencing data, the different algorithms used in various assemblers, and their performance on previous bacterial genomes. 
-Firstly, the data we are working with is LRS from ONT. Therefore, while hybrid assemblers that use both short-read sequencing and LRS have been shown to perform better than LRS alone, we must choose from a LRS assembler (Boostrum et al., 2022).
-Different genome assemblers use various algorithms which may be overlapping-based. 
-Users use multiple assemblers and select the best according to multiple metrics, not just one (e.g. N50) 
- - Tradeoffs between read-length vs accuracy, need read length > repeat lengths, contiguity vs correctness
- - Assembly strategies: De Bruijn graphs rely on exact overlaps, repeat graphs allow for some error so they tolerate more --> used in Flye (cite 2019 paper). Overlap based strategies
-   - Cite paper comparing Flye, Canu, Raven
-Boostrum et al. (2022) compared several LRS assemblers to assemble LRS produced by ONT for several bacteria. They determined that Flye produced most similar metrics to the hybrid assembly methods, which performed the best. Flye produced the smallest genomic distance, indicating it had the most accurate assembly to the reference genome (0.000769-0.000930). Additionally, most of the LR assemblies they produced with < 100 SNVs were Flye based, and flye produced the fewest number of assembles with > 2000 SNVs. Overall, based on the 3Cs of assembly quality (contiguity, completeness, correctness), Flye performed the best when compared to other LRS assemblers (Canu, Raven, Miniasm). 
+### 1.1 Biological Background 
 
-## 2. Proposed methods
-### 2.1 Data & QC
+*Salmonella enterica* is a Gram-negative bacterium and a major cause of food-borne illness in humans (Haendiges et al. 2019). *S. enterica* has been extensively studied at the genomic level. It has a circular genome of about 4.8 Mbp (McClelland, 2001). Genome assembly is the computational process of piecing together fragmented DNA sequences from a genome into a complete, contiguous sequence (Simpson & Pop, 2015). It maps an organism's genetic blueprint, which can serve as a foundation for detecting variants in nucleotides and genome structure. This is essential for advancing fields like biotechnology, evolutionary biology, precision medicine, and more (CD Genomics, n.d.). Long-read sequencing (LRS) by Oxford Nanopore Technologies (ONT) provides longer contigs of sequence reads of tens of kilobases or longer but it is more error prone at about 85-95% accuracy (Boostrom et al., 2022, DeCoster et al., 2018). Here, we used long reads generated with R10 chemistry (expected Q20+, N50: 5-15 kb) and propose a methodology to computationally assemble the *S. enterica* genome. 
 
+### 1.2 Challenges of genome assembly 
 
- - ONT, R10, FastQ reads
- - QC using tolls like Nanoplot
- - Metrics assessed: Read length, N50, select reads with length > X kb, quality distribution
-### 2.2 Assembly & Polishing
- - LRS assembly with Flye version 2.9.6 (latest)
- - Parameters --> default
- - R10 ONT parameters (3% error) set as default for --nano-hq --> see Flye github
-### 2.3 Reference alignment & Visualization
- - Reference genome downloaded from ___ (NCBI)
- - Alignment with minimap2
- - Visualization with ____ (IGV)
+Genome assembly of bacteria is complicated by several challenges. One difficulty is repeat sequences as these create ambiguities when assembling reads based on overlapping segments. For algorithms to solve the assembly, the reads need to be longer than the repeats. If the reads are shorter than the reads, then there are an exponential number of possible genomes, and the problem is not computationally tractable (Simpson & Pop 2015). LRS can address this problem to make genome assembly computationally tractable (Simpson & Pop, 2015). Also, as more sequence data become available, there is a greater need for assemblers to be able to efficiently handle Big Data and scale with the volume of data produced. With LRS data, there is a growing need for assemblers to handle sequencing errors as well (CD Genomics, n.d.). 
 
+### 1.3 Comparison 
 
-## 3. References (check Zotero)
+When choosing a genome assembly tool, we must consider several factors including the nature of the sequencing data, the assembly algorithm, and its performance on previous bacterial genomes. While hybrid assemblers that use both short-read sequencing and LRS have been shown to perform better than LRS alone, the sequences necessitate the use of a long-read assembler (Boostrum et al., 2022). Flye uses repeat graphs, which are built on approximate sequence matches so they can tolerate the higher noise of LRS (Kolmogorov et al., 2019). Boostrum et al. (2022) compared several LRS assemblers (Canu, Raven, Miniasm, Flye) for *de novo* bacterial genome assembly. They determined that Flye produced most similar metrics to the hybrid assembly methods, which performed the best. Flye produced the smallest genomic distance, indicating it had the most accurate assembly to the reference genome (0.000769-0.000930). Additionally, Flye produced the assemblies with the fewest single-nucleotide variants. Overall, Flye is a robust assembler well-suited for long-read sequences produced by ONT (Boostrum et al., 2022). 
+
+## 2. Proposed methods 
+
+The proposed bioinformatics pipeline for this project is: quality control (QC) of ONT sequences using NanoPlot (version 1.46.2, DeCoster et al., 2018), optional filtering and trimming using NanoFilt (version 2.8.0, DeCoster et al., 2018), *de novo* genome assembly using Flye (version 2.9.6, Kolmogorov et al., 2019), assembly polishing using Medaka (version 2.2.0, Oxford Nanopore Technologies Ltd, 2018), reference alignment using Minimap2 (version 2.30, Li, 2018), variant calling with Bcftools (version 1.23, Danecek et al., 2021) and visualization using IGV (desktop application, Robinson et al., 2011).  
+
+### 2.1 QC 
+
+QC of ONT long-read sequencing data will be done with NanoPlot (version 1.46.2) to assess the data quality and whether further processing is necessary. The metrics include read length distribution, N50, total number of reads, and mean read quality score (Q score). NanoPlot is appropriate for this data as high quality reads are expected (Q20) so a more complex tool (e.g. LongQC, Fukasawa et al. 2020) is unnecessary. Read lengths histograms will be used to confirm the presence of long reads, identify excess short fragments, while a bivariate plot of read length verses mean read quality will be used to detect low-quality read clusters.  
+
+### 2.2 Read Processing 
+
+Data processing will be done in NanoFilt if indicated by the QC results. Filtering will be applied if mean read quality falls below the expected Q20, read length N50 is insufficient for Flye assembly (<1kb), there are extremely low-quality clusters, or the total sequencing yield is too low for Flye (< 30 – 50x coverage) (Kolmogorov et al., 2019). Filtering will parameters include a minimum read length threshold (~1kb) and removal of lowest-quality reads (10%). These parameters will be used unless deviations are required based on quality control results from NanoPlot. Aggressive trimming will be avoided to prevent unnecessary loss of coverage. 
+
+### 2.3 *De novo* genome assembly 
+
+*De novo* assembly of the long-read sequencing data will be performed using Flye (version 2.9.6), a long-read assembler optimized for Oxford Nanopore long-read data. Assembly will be conducted using default parameters appropriate for bacterial genomes, producing a draft consensus assembly. Based on the Flye manual, R10 ONT parameters (3% error) are default for ---nano-hq (Kolmogorove et al., 2019). Additional parameters that will be used apart from the defaults will specify the output directory and threads used (half of the available CPU resources). 
+
+### 2.4 Assembly Polishing 
+
+The draft assembly will be polished using Medaka (version 2.2.0) to improve base-level accuracy by correcting sequencing errors associated with LRS. Specific parameters will be set for the input base calls, the assembly Fasta, the output directory, the bacteria flag, and the threads. A bacterial-specific Medaka consensus model compatible with R10 ONT chemistry will be used to optimize accuracy for the *S. enterica* genome (Oxford Nanopore Technologies Ltd., 2018). 
+
+### 2.3 Reference alignment & Visualization 
+
+A reference genome for *S. enterica* will be downloaded from NCBI. The polished assembly will be aligned to the reference genome using minimap2 (version 2.30). Variant calling will be performed using Bcftools (version 1.23) to identify differences between the assembled genome and the reference. For minimap2, default parameters will be used for alignment of entire genomes, and the asm5 flag as they are high-quality alignments, this flag aligns assemblies with less than 5% divergence (Li, 2018). Variant calling will be performed with Bcftools to identify genetic variants to the reference genome. The parameters will set the ploidy as haploid (1) as it is a bacterial genome. Variant files will be compressed, sorted, and indexed for visualization. The assembly structure, alignments, and identified variants will be visualized in IGV to assess assembly the assembly quality and validate variant calls. The shade-by-base quality parameter will be set to distinguish true variants from potential sequencing errors (Robinson et al., 2011). 
+
+ 
+
+## 3. References 
+
+Boostrom, I., Portal, E. A. R., Spiller, O. B., Walsh, T. R., & Sands, K. (2022). Comparing Long-Read Assemblers to Explore the Potential of a Sustainable Low-Cost, Low-Infrastructure Approach to Sequence Antimicrobial Resistant Bacteria With Oxford Nanopore Sequencing. Frontiers in Microbiology, 13. https://doi.org/10.3389/fmicb.2022.796465 
+
+Danecek, P., Bonfield, J. K., Liddle, J., Marshall, J., Ohan, V., Pollard, M. O., Whitwham, A., Keane, T., McCarthy, S. A., Davies, R. M., & Li, H. (2021). Twelve years of SAMtools and BCFtools. GigaScience, 10(2), giab008. https://doi.org/10.1093/gigascience/giab008 
+
+De Coster, W., D’Hert, S., Schultz, D. T., Cruts, M., & Van Broeckhoven, C. (2018). NanoPack: Visualizing and processing long-read sequencing data. Bioinformatics, 34(15), 2666–2669. https://doi.org/10.1093/bioinformatics/bty149 
+
+Fukasawa, Y., Ermini, L., Wang, H., Carty, K., & Cheung, M.-S. (2020). LongQC: A Quality Control Tool for Third Generation Sequencing Long Read Data. G3: Genes|Genomes|Genetics, 10(4), 1193–1196. https://doi.org/10.1534/g3.119.400864 
+
+Haendiges, J., Gonzalez-Escalona, N., Miller, J. D., & Hoffmann, M. (2019). Complete Genome Sequences of Four *Salmonella enterica* Strains Associated with Pistachios Assembled Using a Combination of Short- and Long-Read Sequencing. Microbiology Resource Announcements, 8(38), 10.1128/mra.00975-19. https://doi.org/10.1128/mra.00975-19 
+
+Kolmogorov, M., Yuan, J., Lin, Y., & Pevzner, P. A. (2019). Assembly of long, error-prone reads using repeat graphs. Nature Biotechnology, 37(5), 540–546. https://doi.org/10.1038/s41587-019-0072-8 
+
+Li, H. (2018). Minimap2: Pairwise alignment for nucleotide sequences. Bioinformatics, 34(18), 3094–3100. https://doi.org/10.1093/bioinformatics/bty191 
+
+McClelland, M., Sanderson, K. E., Spieth, J., Clifton, S. W., Latreille, P., Courtney, L., Porwollik, S., Ali, J., Dante, M., Du, F., Hou, S., Layman, D., Leonard, S., Nguyen, C., Scott, K., Holmes, A., Grewal, N., Mulvaney, E., Ryan, E., … Wilson, R. K. (2001). Complete genome sequence of *Salmonella enterica* serovar Typhimurium LT2. Nature, 413(6858), 852–856. https://doi.org/10.1038/35101614 
+
+Robinson, J. T., Thorvaldsdóttir, H., Winckler, W., Guttman, M., Lander, E. S., Getz, G., & Mesirov, J. P. (2011). Integrative genomics viewer. Nature Biotechnology, 29(1), 24–26. https://doi.org/10.1038/nbt.1754 
+
+Simpson, J. T., & Pop, M. (2015). The Theory and Practice of Genome Sequence Assembly. Annual Review of Genomics and Human Genetics, 16(1), 153–172. https://doi.org/10.1146/annurev-genom-090314-050032 
+
 
