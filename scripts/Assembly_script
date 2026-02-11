@@ -1,0 +1,129 @@
+#Assembly_script
+#Assembly pipeline for Salmonella enterica
+
+#Steps:
+#1: Download the raw data (NCBI isolate SRR32410565)
+#2: QC with NanoPlot (v1.46.2)
+#3: Read processing NanoFilt (v2.8.0)
+#4: De novo genome assembly with Flye (v2.9.6)
+#5: Polishing with Racon (1.5) and Medaka (v2.2.0)
+#6: Alignment with minimap2 (v2.3.0)
+
+#Downloaded everything in base conda --> Make environments
+conda activate
+#Downloading raw sequences as a FASTQ from NCBI
+#Install all tools needed
+#Sanity check -> Look for @read_id, sequence, +, quality string
+zcat SRR32410565.fastq.gz | head
+
+#Raw read QC with NanoPlot
+#Inspect for: read length distribution, read N50, mean Q score, total bases (coverage estimate)
+#Gives HTML of summary of reads, good enough quality, can filter for better bases
+NanoPlot \
+  --fastq SRR32410565.fastq.gz \
+  --outdir nanoplot_raw \
+  --loglength
+
+#Deciding filtering thresholds
+#Need reads > 1kb, at least 30x coverage, Q20, removing low quality reads (10%)
+#Remove low quality long reads, keep 2k as minimum read length to keep coverage, try to retain most of 737 Mb high-quality data
+#NanoFilt -q 12 -l 2000 SRR32410565.fastq.gz > filtered.fastq
+
+#Stricter option for bacterial genome (small genome < 10Mb):
+#Retain about 600-700Mb, higher quality, fewer polishing rounds needed
+#NanoFilt doesn't automatically unzip: use example from their github
+gunzip -c SRR32410565.fastq.gz | NanoFilt -q 15 -l 3000 | gzip > filtered.fastq.gz
+
+#Confirm filtering worked:
+zcat filtered.fastq.gz | head
+#Compare read counts
+zcat SRR32410565.fastq.gz | wc -l
+zcat filtered.fastq.gz | wc -l
+
+#QC on filtered reads:
+NanoPlot --fastq filtered.fastq.gz --outdir nanoplot_filtered --loglength
+
+#Assembly with Flye
+conda activate genome_assembly
+#flye --nano-raw filtered.fastq.gz --genome-size 5m --out-dir flye_out --threads 16
+#Using --nano-hq for ONT data (Q>20)
+flye \
+  --nano-hq filtered.fastq.gz \
+  --genome-size 5m \
+  --out-dir flye_out \
+  --threads 8
+
+#Check output, gave 3 contigs
+ls flye_out
+grep ">" flye_out/assembly.fasta
+
+#Polishing with two rounds of Racon assemblers
+#Round 1
+#First map the Flye-generated assembly to the filtered nanopore reads using Minimap2
+#Aligning to the filtered reads will remove low-quality reads, improve racon polishing accuracy, and make a faster and cleaner alignments
+#-a -> output SAM (needed for Racon, samtools, IGV)
+#-x map-ont -> preset optimized for oxford nanopore reads
+#flye_out/assembly.fasta -> reference (draft assembly)
+#filtered.fastq.gz -> filtered ONT threads
+#>flye.sam -> alignment output
+#Add threads (half of available CPU)
+#minimap2 -t 6 -ax map-ont flye_out/assembly.fasta filtered.fastq.gz > flye.sam
+
+
+#Polishing round 1 with minimap and racon
+minimap2 -t 12 -ax map-ont flye_out/assembly.fasta filtered.fastq.gz > aln1.sam
+racon filtered.fastq.gz aln1.sam flye_out/assembly.fasta > racon1.fasta
+
+#Polishing round 2 with minimap2 and racon
+minimap2 -t 12 -ax map-ont racon1.fasta filtered.fastq.gz > aln2.sam
+racon filtered.fastq.gz aln2.sam racon1.fasta > racon2.fasta
+
+#Download reference genome
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/945/GCF_000006945.2_ASM694v2/GCF_000006945.2_ASM694v2_genomic.fna.gz
+gunzip GCF_000006945.2_ASM694v2_genomic.fna.gz
+mv GCF_000006945.2_ASM694v2_genomic.fna salmonella_ref.fasta
+
+#Polishing with Medaka (one run). This is the final assembly
+conda activate medaka
+#check version (v2.2.0)
+medaka --version
+
+#Confirm available models
+medaka tools list_models
+#Returned: Default consensus: r1041_e82_400bps_sup_v5.2.0
+#Confirm medaka model to use based on the long reads, and consensus not variant model
+#medaka tools resolve_model --auto_model consensus_bacteria SRR32410565.fastq.gz
+#Didn't work because basecaller model is not tagged
+#Bypass this and just infer the best model based on the data
+#Using SUP model:
+#medaka_consensus -i ${BASECALLS} -d ${DRAFT} -o ${OUTDIR} -t ${NPROC}
+
+medaka_consensus \
+  -i filtered.fastq.gz \
+  -d racon2.fasta \
+  -o medaka_out \
+  -m r1041_e82_400bps_sup_v5.2.0 \
+  -t 12
+
+#Once medaka is finished check that it produced something of size ~5Mb (got 4.9Mb)
+ls -lh medaka_out/consensus.fasta
+#Check number of contigs (got 3)
+grep -c ">" medaka_out/consensus.fasta
+
+#Align reads to polished Assembly (optimized for <= 5% divergence because we're using polished assembly)
+#Want to visualize coverage and read support
+#Activate environment genome_annotation
+conda activate genome_annotation
+minimap2 -t 12 -ax map-ont \
+  medaka_out/consensus.fasta filtered.fastq.gz | \
+samtools sort -o reads_vs_assembly.bam
+
+samtools index reads_vs_assembly.bam
+#Open in IGV -> Want to see uniform coverage and no gaps
+
+#Align assembly to reference genome (for variants)
+minimap2 -t 12 -ax asm5 \
+  salmonella_ref.fasta medaka_out/consensus.fasta | \
+  samtools sort -o asm_vs_ref.bam
+
+samtools index asm_vs_ref.bam

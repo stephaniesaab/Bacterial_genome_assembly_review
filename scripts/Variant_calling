@@ -1,0 +1,57 @@
+#Variant Calling script
+
+# Variant Calling #2 =====================
+#Variant calling the raw reads on the reference genomes
+conda activate genome_annotation
+minimap2 -t 12 -ax map-ont \
+  salmonella_ref.fasta filtered.fastq.gz | \
+samtools sort -o reads_vs_ref.bam
+samtools index reads_vs_ref.bam
+
+bcftools mpileup -Ou -f salmonella_ref.fasta reads_vs_ref.bam | \
+bcftools call -mv --ploidy 1 -Oz -o reads_variants.vcf.gz
+gunzip reads_variants.vcf.gz
+
+#Getting the stats: report the total SNPs, total indels
+bcftools index reads_variants.vcf.gz
+
+#Quick stats:
+bcftools stats reads_variants.vcf.gz > reads_variant_stats.txt
+
+#Trying to filter variants
+bcftools view -v snps reads_variants.vcf.gz > reads_snps.vcf
+#Try to exclude low-quality calls
+bcftools view -i 'QUAL>30 && DP>10' reads_snps.vcf > reads_snps_highqual.vcf
+
+#Trying to make a lollipop plot of the STM2913 gene (nearby the SP1 gene)
+#CDS Start= 3,055,562
+#CDS End = 3,057,033
+#Need to compress with bgzip, and index it with bcftools to make .csi
+gunzip reads_snps_highqual.vcf.gz
+bgzip reads_snps_highqual.vcf
+bcftools index reads_snps_highqual.vcf.gz
+bcftools view \
+  -r NC_003197.2:3055562-3057033 \
+  reads_snps_highqual.vcf \
+  > STM2913_snps.vcf
+
+#Confirm that I see 5 snps + Header lines
+bcftools view STM2913_snps.vcf
+
+#Now try to extract amino acid positions
+#Reference genome -f
+#Genomic annotations -g
+#Output file make -o
+bcftools csq \
+  -f salmonella_ref.fasta \
+  -g GCF_000006945.2_ASM694v2_genomic.gff \
+  reads_snps_highqual.vcf.gz \
+  -Oz -o reads_snps_csq.vcf.gz
+#Index:
+bcftools index reads_snps_csq.vcf.gz
+#View SNPs in STM2913
+bcftools view   -r NC_003197.2:3055562-3057033   reads_snps_csq.vcf.gz | tail -6
+#Did not annotate gene name because it is on the minus strand -> limitation of bcftools
+
+#Trying to download GFF3 file to be formatted for bcftools -variants_csq
+wget https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/gff3/bacteria_1_collection/salmonella_enterica_subsp_enterica_serovar_typhimurium_str_dt104_gca_001144305/Salmonella_enterica_subsp_enterica_serovar_typhimurium_str_dt104_gca_001144305.8490_2_86.62.gff3.gz
